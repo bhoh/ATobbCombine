@@ -1,0 +1,28 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Exclude ALL output directories and generated data
+outputs/
+
+# ROOT binary files
+*.root
+
+# Generated Images, Plots & Documents
+*.png
+*.pdf
+*.jpg
+*.jpeg
+*.svg
+
+# Combine loggers & temporary files
+*.out
+*.log
+roostats*
+higgsCombine*
+
+# OS / Editor files
+.DS_Store
+.vscode/
+.idea/
