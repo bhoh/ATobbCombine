@@ -28,8 +28,8 @@ class ChargedHiggsBR(PhysicsModel):
         pass
 
     def doParametersOfInterest(self):
-        # Define POI: BR = B(t -> H+ b) with range [0.0, 1.0]
-        self.modelBuilder.doVar("BR[0.001,0.0,1.0]")
+        # Define POI: BR = B(t -> H+ b) with range [-1.0, 1.0] to support unconstrained profile impacts
+        self.modelBuilder.doVar("BR[0.001,-1.0,1.0]")
         self.modelBuilder.doSet("POI", "BR")
 
         # TTbar background scaling: (1 - BR) * (1 - BR)
