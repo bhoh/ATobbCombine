@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 """
-CR-Only Fit and Nuisance Pull Analysis for ATobb Combine.
-Runs combine FitDiagnostics masking the Signal Region (SR) on the baseline master workspace:
-  --setParameters mask_Muon_SR=1,mask_Electron_SR=1
-  --freezeParameters mask_Muon_SR,mask_Electron_SR
-Measures background rateParams (ttbbXsec, ttccXsec) and extracts post-fit parameters.
+Control Region (CR-Only) FitDiagnostics & Background RateParam Profiling Module.
+Masks Signal Regions (SR) to fit only background processes in the CR on real data,
+extracting post-fit normalizations (ttbbXsec, ttccXsec) and pre/post-fit shapes with uncertainties.
 
 Usage:
-  python3 scripts/run_cr_fit.py [--workspace WORKSPACE] [--unblind] [--output-dir DIR]
+  python3 scripts/run_cr_fit.py [--workspace WS.root] [--output-dir DIR] [--num-toys-for-shapes 200]
 """
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 import ROOT
@@ -23,40 +20,45 @@ if REPO_ROOT not in sys.path:
 
 from configs.analysis_config import BASELINE_DIR
 
-ROOT.gROOT.SetBatch(True)
-ROOT.gErrorIgnoreLevel = ROOT.kWarning
-
 
 def run_fit_diagnostics(
     workspace_path,
     output_dir,
     masked_channels=("mask_Muon_SR", "mask_Electron_SR"),
-    unblind=False,
+    unblind=True,
     robust=False,
+    save_uncertainties=True,
+    num_toys_for_shapes=50,
+    robust_hesse=True,
 ):
-    """Execute Combine FitDiagnostics with masked SR categories."""
+    """Execute Combine FitDiagnostics with masked SR categories and shape uncertainties."""
     os.makedirs(output_dir, exist_ok=True)
     abs_ws = os.path.abspath(workspace_path)
 
     mask_flags = ""
     if masked_channels:
-        mask_params = ",".join(f"{ch}=1" for ch in masked_channels)
-        freeze_params = ",".join(masked_channels)
+        mask_params = ",".join(f"{ch}=1" for ch in masked_channels) + ",BR=0"
+        freeze_params = ",".join(masked_channels) + ",BR"
         mask_flags = f"--setParameters {mask_params} --freezeParameters {freeze_params}"
 
     robust_flag = "--robustFit=1" if robust else "--robustFit=0"
+    hesse_flag = "--robustHesse=1" if robust_hesse else "--robustHesse=0"
+    unc_flag = f"--saveWithUncertainties --numToysForShapes={num_toys_for_shapes} --ignoreCovWarning" if save_uncertainties else ""
+
     cmd = (
         f"combine -M FitDiagnostics {abs_ws} "
         f"{'' if unblind else '-t -1 --expectSignal=0'} "
         f"{mask_flags} "
-        f"--saveShapes --saveNormalizations "
-        f"{robust_flag} --cminDefaultMinimizerStrategy=0 "
+        f"--redefineSignalPOIs BR --preFitValue 0.0 --skipSBFit "
+        f"--saveShapes --saveNormalizations {unc_flag} "
+        f"{robust_flag} {hesse_flag} --cminDefaultMinimizerStrategy=0 "
         f"-n _CR"
     )
 
     print(f"\n[+] Running Combine FitDiagnostics on CR (Masked SR):")
     print(f"    Command: {cmd}")
     print(f"    Mode: {'UNBLINDED (Real Data)' if unblind else 'BLINDED (Asimov Toy)'}")
+    print(f"    Shape Uncertainties: {'Enabled (' + str(num_toys_for_shapes) + ' toys)' if save_uncertainties else 'Disabled'}")
 
     res = subprocess.run(cmd, shell=True, cwd=output_dir, capture_output=True, text=True)
     if res.returncode != 0:
@@ -129,15 +131,19 @@ def main():
         default=os.path.join(BASELINE_DIR, "cr_fit"),
         help="Directory to save fitDiagnostics outputs",
     )
-    parser.add_argument("--unblind", action="store_true", help="Run unblinded on real data (default: Asimov toy)")
+    parser.add_argument("--blind", action="store_true", help="Run on Asimov toy instead of real CR data (default: False, real data)")
     parser.add_argument("--robust", action="store_true", help="Use robustFit=1 (slower, for exact errors)")
+    parser.add_argument("--no-unc", action="store_true", help="Disable shape uncertainties resampling (faster)")
+    parser.add_argument("--num-toys-for-shapes", type=int, default=50, help="Number of toys for shape covariance resampling (default: 50)")
     args = parser.parse_args()
 
     fit_root = run_fit_diagnostics(
         workspace_path=args.workspace,
         output_dir=args.output_dir,
-        unblind=args.unblind,
+        unblind=not args.blind,
         robust=args.robust,
+        save_uncertainties=not args.no_unc,
+        num_toys_for_shapes=args.num_toys_for_shapes,
     )
 
     if fit_root:
