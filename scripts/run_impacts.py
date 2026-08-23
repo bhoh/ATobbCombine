@@ -7,6 +7,7 @@ Implements the 2-Stage Snapshot-based Post-fit Asimov Impacts workflow:
   2. Stage 2 (Impact on POI): Load snapshot, set POI (BR), and run parameter scans using -t -1 --toysFrequentist
      with unconstrained POI range (e.g. rMin=-0.05, rMax=0.05 or rMin=-1.0) to produce full symmetric 2-sided impacts.
   3. Stage 3 (Plotting): Aggregates JSON and renders CMS publication-quality impact plot.
+  4. Per-Mass Organization: Automatically saves results in separate subdirectories per mass point (e.g. impacts/MA18/).
 
 Modes:
   - cr_only: Masked SR categories. Stage 1 fits real CR data with BR=0 frozen. Stage 2 evaluates impacts on BR (or custom POI).
@@ -45,10 +46,12 @@ def run_impacts_for_mass(
     r_max=None,
     extra_freeze="",
 ):
-    """Run full Snapshot-based Impacts pipeline with symmetric POI bounds for a given mass point and mode."""
-    os.makedirs(output_dir, exist_ok=True)
+    """Run full Snapshot-based Impacts pipeline with symmetric POI bounds and per-mass subdirectories."""
+    # Organize outputs into separate per-mass subdirectories (e.g. impacts/MA18/)
+    mass_outdir = os.path.join(output_dir, ma_point)
+    os.makedirs(mass_outdir, exist_ok=True)
     abs_ws = os.path.abspath(workspace_path)
-    abs_out = os.path.abspath(output_dir)
+    abs_out = os.path.abspath(mass_outdir)
 
     mass_val = int(ma_point.replace("MA", ""))
 
@@ -102,7 +105,7 @@ def run_impacts_for_mass(
     print(f" POI Range: [{r_min}, {r_max}] (Symmetric 2-sided impacts enabled)")
     print(f" Data Mode: {data_label}")
     print(f" Workspace: {abs_ws}")
-    print(f" Output Directory: {abs_out}")
+    print(f" Target Output Directory: {abs_out}")
     print(f" Parallel Cores: {parallel}")
     print("=" * 95)
 
@@ -179,19 +182,25 @@ def run_impacts_for_mass(
         print(f"[-] plotImpacts.py failed:\n{res_plot.stderr}")
         return False
 
+    # Remove any existing PNGs before conversion to guarantee clean overwrite
+    for old_png in glob.glob(os.path.join(abs_out, f"{plot_name}*.png")):
+        try:
+            os.remove(old_png)
+        except OSError:
+            pass
+
     # Convert PDF pages to PNG
     pdf_path = os.path.join(abs_out, f"{plot_name}.pdf")
     png_path = os.path.join(abs_out, f"{plot_name}.png")
     subprocess.run(
-        f"convert -density 150 {plot_name}.pdf {plot_name}.png 2>/dev/null || pdftoppm -png -r 150 {plot_name}.pdf {plot_name} 2>/dev/null || true",
+        f"convert -density 150 {plot_name}.pdf {plot_name}.png 2>/dev/null || true",
         shell=True,
         cwd=abs_out,
     )
-    # Ensure plot_name.png points to the main overview page
-    for cand in [f"{plot_name}-0.png", f"{plot_name}-1.png"]:
-        cand_path = os.path.join(abs_out, cand)
-        if os.path.exists(cand_path) and not os.path.exists(png_path):
-            shutil.copyfile(cand_path, png_path)
+    # Ensure plot_name.png points to the main overview page (page 0)
+    cand_files = sorted(glob.glob(os.path.join(abs_out, f"{plot_name}-*.png")))
+    if cand_files:
+        shutil.copyfile(cand_files[0], png_path)
 
     # Cleanup temporary parameter fit ROOT files to keep workspace tidy
     for tmp_f in glob.glob(os.path.join(abs_out, f"higgsCombine*Fit*_{name_tag}*.root")):
@@ -205,14 +214,14 @@ def run_impacts_for_mass(
     print(f"    - JSON:                {os.path.join(abs_out, json_name)}")
     print(f"    - PDF:                 {pdf_path}")
     if os.path.exists(png_path):
-        print(f"    - PNG:                 {png_path}")
+        print(f"    - PNG (Overview):      {png_path}")
 
     return True
 
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate and plot nuisance parameter impacts using 2-Stage Snapshot workflow with symmetric bounds")
-    parser.add_argument("--mass", default="MA18", help="Target mass point (e.g. MA18, MA25, MA125, or all, default: MA18)")
+    parser.add_argument("--mass", default="all", help="Target mass point (e.g. MA18, MA25, MA125, or all, default: all)")
     parser.add_argument("--mode", choices=["cr_only", "combined", "sr_only"], default="cr_only", help="Channel mode (default: cr_only)")
     parser.add_argument("--poi", default="BR", help="Parameter of Interest (default: BR)")
     parser.add_argument("--parallel", "-j", type=int, default=8, help="Number of parallel fitting threads (default: 8)")
