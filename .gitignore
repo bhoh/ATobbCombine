@@ -18,6 +18,7 @@ outputs/
 
 # Combine loggers & temporary files
 *.out
+*.err
 *.log
 roostats*
 higgsCombine*
