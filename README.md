@@ -7,23 +7,52 @@ This repository provides a modular, flexible statistical inference framework bui
 ## 1. Physics Model & POI Parameterization
 
 The Parameter of Interest (POI) is the branching ratio:
-$$\mathcal{B} \equiv \mathcal{B}(t \to H^{+}b)$$
 
-Assuming $\mathcal{B}(t \to W b) = 1 - \mathcal{B}$, the process scalings in $pp \to t\bar{t}$ are parameterized as:
+$$
+\mathcal{B} \equiv \mathcal{B}(t \to H^{+}b)
+$$
 
-1. **Standard Model $t\bar{t}$ Background**:
-   $$t\bar{t} \to W^{+}b\,W^{-}\bar{b} \quad \implies \quad \mu_{t\bar{t}} = (1 - \mathcal{B})^2$$
+Assuming $\mathcal{B}(t \to W b) = 1 - \mathcal{B}$ and neglecting double-charged Higgs production ($\mathcal{B}^2 \ll 1$), the process scalings in $pp \to t\bar{t}$ are parameterized as:
 
-2. **Single Charged Higgs Signal**:
-   $$t\bar{t} \to (H^{+}b)(W^{-}\bar{b}) + (W^{+}b)(H^{-}\bar{b}), \quad H^{\pm} \to W^{\pm}A\,(\to b\bar{b})$$
-   Assuming $\mathcal{B}(H^{\pm} \to W^{\pm}A) = 1$ and $\mathcal{B}(A \to b\bar{b}) = 1$, the effective signal cross section passing the lepton filter is:
-   $$\sigma_{\text{signal}}^{\text{eff}} = 2 \cdot \sigma_{tt} \cdot \epsilon_{\text{lep}} \cdot (1 - \mathcal{B}) \cdot \mathcal{B}$$
-   where the lepton filter acceptance $\epsilon_{\text{lep}}$ accounts for both semileptonic and dileptonic $WW$ decays:
-   $$\epsilon_{\text{lep}} = 2 \cdot (3 \cdot \mathcal{B}_{W\to\ell\nu}) \cdot \mathcal{B}_{W\to q\bar{q}} + (3 \cdot \mathcal{B}_{W\to\ell\nu})^2 \approx 0.545389$$
-   Using $\sigma_{tt} = 923.6\text{ pb}$, $\mathcal{B}_{W\to\ell\nu} = 0.1086$ (per lepton flavor), and $\mathcal{B}_{W\to q\bar{q}} = 0.6741$:
-   $$2 \cdot \sigma_{tt} \cdot \epsilon_{\text{lep}} = 2 \cdot 923.6 \cdot 0.5453892 \approx 1007.443\text{ pb}$$
-   Since the signal template is generated with a reference cross section of $1\text{ pb}$, the scaling factor $\mu_{\text{signal}}$ (implemented as `signal_scaling` in the Combine physics model) is:
-   $$\implies \mu_{\text{signal}} \equiv \frac{\sigma_{\text{signal}}^{\text{eff}}}{1\text{ pb}} \approx 1007.443 \cdot (1 - \mathcal{B}) \cdot \mathcal{B}$$
+### 1.1 Standard Model $t\bar{t}$ Background
+
+$$
+t\bar{t} \to W^{+}b\,W^{-}\bar{b} \quad \implies \quad \mu_{t\bar{t}} = (1 - \mathcal{B})^2
+$$
+
+### 1.2 Single Charged Higgs Signal
+
+$$
+t\bar{t} \to (H^{+}b)(W^{-}\bar{b}) + (W^{+}b)(H^{-}\bar{b}), \quad H^{\pm} \to W^{\pm}A\,(\to b\bar{b})
+$$
+
+Assuming $\mathcal{B}(H^{\pm} \to W^{\pm}A) = 1$ and $\mathcal{B}(A \to b\bar{b}) = 1$, the effective signal cross section passing the lepton filter is:
+
+$$
+\sigma_{\text{signal}}^{\text{eff}} = 2 \cdot \sigma_{tt} \cdot \epsilon_{\text{lep}} \cdot (1 - \mathcal{B}) \cdot \mathcal{B}
+$$
+
+where the lepton filter acceptance $\epsilon_{\text{lep}}$ accounts for both semileptonic and dileptonic $WW$ decays:
+
+$$
+\epsilon_{\text{lep}} = 2 \cdot (3 \cdot \mathcal{B}_{W\to\ell\nu}) \cdot \mathcal{B}_{W\to q\bar{q}} + (3 \cdot \mathcal{B}_{W\to\ell\nu})^2 \approx 0.545389
+$$
+
+with the input physics parameters:
+
+$$
+\sigma_{tt} = 923.6\text{ pb}, \quad \mathcal{B}_{W\to\ell\nu} = 0.1086\text{ (per lepton flavor)}, \quad \mathcal{B}_{W\to q\bar{q}} = 0.6741
+$$
+
+$$
+2 \cdot \sigma_{tt} \cdot \epsilon_{\text{lep}} = 2 \cdot 923.6 \cdot 0.5453892 \approx 1007.443\text{ pb}
+$$
+
+Since the signal template is generated with a reference cross section of $1\text{ pb}$, the scaling factor $\mu_{\text{signal}}$ (implemented as `signal_scaling` in the Combine physics model) is:
+
+$$
+\implies \mu_{\text{signal}} \equiv \frac{\sigma_{\text{signal}}^{\text{eff}}}{1\text{ pb}} \approx 1007.443 \cdot (1 - \mathcal{B}) \cdot \mathcal{B}
+$$
 
 This non-linear scaling is implemented in the custom Combine physics model [`modules/charged_higgs_br.py`](modules/charged_higgs_br.py).
 
