@@ -18,7 +18,7 @@ Assuming $\mathcal{B}(t \to W b) = 1 - \mathcal{B}$, the process scalings in $pp
    $$t\bar{t} \to (H^{+}b)(W^{-}\bar{b}) + (W^{+}b)(H^{-}\bar{b}), \quad H^{+} \to W^{+}A\,(\to b\bar{b})$$
    $$\sigma_{\text{signal}}^{\text{eff}} = 2 \cdot \sigma_{tt} \cdot \left[ 2 \cdot (3 \cdot \mathcal{B}_{W\to\ell\nu}) \cdot \mathcal{B}_{W\to q\bar{q}} + (3 \cdot \mathcal{B}_{W\to\ell\nu})^2 \right] \cdot (1 - \mathcal{B}) \cdot \mathcal{B}$$
    where $\sigma_{tt} = 923.6\text{ pb}$, $\mathcal{B}_{W\to\ell\nu} = 0.1086$, $\mathcal{B}_{W\to q\bar{q}} = 0.6741$.
-   $$\implies \text{signal\_scale} \approx 1007.293 \times (1 - \mathcal{B}) \cdot \mathcal{B}$$
+   $$\implies \mu_{\text{signal}} \approx 1007.293 \times (1 - \mathcal{B}) \cdot \mathcal{B}$$
 
 This non-linear scaling is implemented in the custom Combine physics model [`modules/charged_higgs_br.py`](modules/charged_higgs_br.py).
 
@@ -26,9 +26,9 @@ This non-linear scaling is implemented in the custom Combine physics model [`mod
 
 ## 2. Analysis Regions & Blinding Policy
 
-- **Control Region (CR)**: $\text{bdt\_score\_avg} \le 0.3$ (background-dominated phase space).
+- **Control Region (CR)**: `bdt_score_avg` $\le 0.3$ (background-dominated phase space).
   - **Real Data Fit Allowed**: Used to measure $t\bar{t}+bb$ and $t\bar{t}+cc$ rate parameters (`ttbbXsec`, `ttccXsec`) directly from data.
-- **Signal Region (SR)**: $\text{bdt\_score\_avg} > 0.3$ (signal-enriched region for 8 mass points: $m_A \in \{18, 25, 36, 50, 70, 90, 110, 125\}\text{ GeV}$).
+- **Signal Region (SR)**: `bdt_score_avg` $> 0.3$ (signal-enriched region for 8 mass points: $m_A \in \{18, 25, 36, 50, 70, 90, 110, 125\}\text{ GeV}$).
   - **Blinded Analysis**: Any measurement or fit involving the Signal Region (Combined CR+SR or SR-only) **strictly uses `-t -1` Asimov toys** to protect against unblinding bias.
 - **Master 4-Category Workspaces with Channel Masks**:
   - Master workspaces compile all 4 joint categories: `Muon_CR`, `Electron_CR`, `Muon_SR`, `Electron_SR`.
